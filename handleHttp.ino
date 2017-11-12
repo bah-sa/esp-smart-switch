@@ -256,12 +256,15 @@ void handleSw() {
     /* Получить текущее состояние нагрузки */
   }
   
-  // Redirect to jpeg image
+  // Redirect to switch page
+/*  
   if (socket_mode==SOCKET_MODE_RESETTER) {
     server.sendHeader("Location", (socket_state==1?"/reset_gray.png":"/reset.png"), true);
   } else {
     server.sendHeader("Location", (socket_state==1?"/on.png":"/off.png"), true);
   }
+*/  
+  server.sendHeader("Location", "/switch", true);
   server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   server.sendHeader("Pragma", "no-cache");
   server.sendHeader("Expires", "-1");
@@ -296,22 +299,31 @@ void handleSwitch() {
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
   sendChunk( FPSTR(STYLE) );
+
+  /* MSIE не поддерживает SSE, поэтому принудительно обновляем страницу
+   * каждые 30 секунд,
+   * а если мы находимся в состоянии RESETTING - то через (RESET_PERIOD+1) секунд 
+   */
+  int refreshPeriod = (socket_mode==SOCKET_MODE_RESETTER && socket_state==1?RESET_PERIOD+1:30);
   /* Switch script */
   sendChunk(
     String() +
-    "<script>\n"
-    "var cnt=0;" /* счетчик, добавляем как аргумент в запрос, чтобы избежать кэширования запросов */
+    "<script language='jscript'>\n"
+    "  var socket_state="+socket_state+";\n"
+    "  var power_is_on_s='"+FPSTR(POWER_IS_ON_S)+"';\n"
+    "  var power_is_off_s='"+FPSTR(POWER_IS_OFF_S)+"';\n"
+    "  var resetting_s='"+FPSTR(RESETTING_S)+"';\n"
+    "  var switch_on_s='"+FPSTR(SWITCH_ON_S)+"';\n"
+    "  var switch_off_s='"+FPSTR(SWITCH_OFF_S)+"';\n"
+    "  var ua=navigator.userAgent; if (ua.search(/MSIE/)!=-1 || ua.search(/rv:11.0/)!=-1) { window.setTimeout(function(){location.reload(true)},"+String(refreshPeriod)+"000) }\n"
     "function sw(img) {\n"
-    "if (document.all('socket_mode')[1].checked) {\n"
-    "  document.getElementById(\"ssimg\").src=(img.src.indexOf('/sw?st=idle')>0?'/sw?st=reset':'/sw?st=idle')+'&cnt='+(cnt++);\n"
-    /* MSIE не поддерживает SSE, поэтому принудительно обновим страницу через 11 секунд */
-    "  var ua=navigator.userAgent; if (ua.search(/MSIE/)!=-1 || ua.search(/rv:11.0/)!=-1) { window.setTimeout(function(){location.reload(true)},"+String(RESET_PERIOD+1)+"000) }\n"
-    "} else {"
-    "  document.getElementById(\"ssimg\").src=(img.src.indexOf('/sw?st=off')>0?'/sw?st=on':'/sw?st=off')+'&cnt='+(cnt++);\n"
-    "}\n"
-    "document.getElementById(\"spinner\").style.visibility=\"visible\";\n"
-    "document.getElementById(\"comment\").style.visibility=\"hidden\";\n"
-    "document.getElementById(\"ticker\").style.visibility=\"hidden\";\n"
+    " if (document.all('socket_mode')[1].checked) {\n" /* resetter mode */
+    "   location.href=(socket_state==1?'/sw?st=idle':'/sw?st=reset');\n"
+    " } else {\n"
+    "   location.href=(socket_state==1?'/sw?st=off':'/sw?st=on');\n"
+    " }\n"
+    " document.getElementById(\"comment\").style.visibility=\"hidden\";\n"
+    " document.getElementById(\"ticker\").style.visibility=\"hidden\";\n"
     "}\n"
     );
   sendChunk(
@@ -402,24 +414,34 @@ void handleSwitch() {
     "<input type='radio' name='socket_mode' onclick='socketModeChanged(this.value)' value='2' "+getCheckedAttribute(socket_mode==2)+">Thermostat\n"
     "</td></tr>\n");
     
-    /* Socket Status */
+  /* Socket Status */
   sendChunk(
     String() +
-    "<tr class='clsTR0' id='socket_status_row' "+(socket_pin<0?"style='display:none'":"")+"><th class='clsTH1' style='vertical-align:middle;padding-top:0px;'>Status:</th>"
+    "<tr class='clsTR0' id='socket_status_row' "+(socket_pin<0?"style='display:none'":"")+"><th class='clsTH1' style='vertical-align:middle;p_adding-top:0px;'>Status:</th>"
     "<td class='clsTD1' style='white-space:nowrap;'>\n"
-    "<a href='#'><img id='ssimg' class='clsIcon1' src='/sw?st="+(socket_mode==SOCKET_MODE_RESETTER?(socket_state==1?"reset":"idle"):(socket_state==1?"on":"off"))+"'\n"
-    " onload='document.getElementById(\"spinner\").style.visibility=\"hidden\";'\n"
-    " onclick='sw(this);'/></a>\n"
-    "<img id='spinner' src='/spinner.gif' class='clsIcon1'"
-    " style='height:32px;width:32px;position:relative;top:-8px;left:0px;visibility:hidden;'>\n"
-    "<div id='ticker'  style='font:bold 9pt helvetica;position:relative;top:-20px;left:-32px;width:32px;text-align:center;display:inline-block;color:#666666;;visibility:hidden;z-index:100;'>0</div>"
-    "<div id='comment' style='font:bold 9pt helvetica;position:relative;top:-20px;left:-32px;display:inline-block;color:#666666;visibility:hidden;'>sec. to ON</div>"
+    );
+
+  sendChunk(
+    String() +
+    "<div id='sstate' class='"+
+    (socket_mode==SOCKET_MODE_RESETTER?(socket_state==1?"clsOFF":"clsON"):(socket_state==1?"clsON":"clsOFF"))+
+    "'>"+
+    (socket_mode==SOCKET_MODE_RESETTER?(socket_state==1?FPSTR(RESETTING_S):FPSTR(POWER_IS_ON_S)):(socket_state==1?FPSTR(POWER_IS_ON_S):FPSTR(POWER_IS_OFF_S)))+
+    "</div>"
+    " <a href='#'><span id='saction'"
+    " onclick='sw(this);'/>"+
+    (socket_mode==SOCKET_MODE_RESETTER?(socket_state==1?FPSTR(EMPTY_S):FPSTR(RESET_S)):(socket_state==1?FPSTR(SWITCH_OFF_S):FPSTR(SWITCH_ON_S)))+
+    "</span></a>\n"
+    );
+    
+  sendChunk(
+    String() +
+    "<div id='ticker'  style='font:bold 9pt helvetica;width:32px;text-align:center;display:inline-block;color:#666666;;visibility:hidden;z-index:100;'>0</div>"
+    "<div id='comment' style='font:bold 9pt helvetica;display:inline-block;color:#666666;visibility:hidden;'>sec. to ON</div>"
     "</td></tr>\n"
     "</table>");
 
-  /*
-   * Thermostat Options
-   */
+  /* Thermostat Options */
   sendChunk(
     String() +
     "<table id='ts_opt_table' class='clsT1' "+(socket_pin<0 || socket_mode!=2?"style='display:none'":"")+"><caption>Thermostat Options</caption>\n"
@@ -429,7 +451,7 @@ void handleSwitch() {
     "<option value='"+getAddressAsString(THERMOSENSOR_NON_SELECTED)+"' "+getSelectedAttribute(getAddressAsString(thermostat_sensor),  getAddressAsString(THERMOSENSOR_NON_SELECTED))+">Not selected\n"
     );
 
-  // Формируем список доступных термодатчиков
+  /* Формируем список доступных термодатчиков */
 
   /* OneWire DS18B20 */
   if (onewire_pin>=0) {
@@ -477,6 +499,7 @@ void handleSwitch() {
     );
   sendChunk( String() +
     "<select name='thermostat_temperature' class='clsSelect'>\n"
+    "<option  value='4' "+getSelectedAttribute(thermostat_temperature,  4)+">+4&#0176;&nbsp;C\n"
     "<option  value='5' "+getSelectedAttribute(thermostat_temperature,  5)+">+5&#0176;&nbsp;C\n"
     "<option  value='6' "+getSelectedAttribute(thermostat_temperature,  6)+">+6&#0176;&nbsp;C\n"
     "<option  value='7' "+getSelectedAttribute(thermostat_temperature,  7)+">+7&#0176;&nbsp;C\n"
@@ -505,7 +528,7 @@ void handleSwitch() {
     "<option  value='28' "+getSelectedAttribute(thermostat_temperature, 28)+">+28&#0176;&nbsp;C\n"
     "<option  value='29' "+getSelectedAttribute(thermostat_temperature, 29)+">+29&#0176;&nbsp;C\n"
     "<option  value='30' "+getSelectedAttribute(thermostat_temperature, 30)+">+30&#0176;&nbsp;C\n"
-    "<select>\n"
+    "</select>\n"
     );
   sendChunk( String() +
     "</td></tr>\n"
@@ -516,17 +539,16 @@ void handleSwitch() {
     "<option  value='0.25' "+getSelectedAttribute(thermostat_deviation, 0.25)+">&#0177;0.25&#0176;&nbsp;C\n"
     "<option  value='0.5' "+getSelectedAttribute(thermostat_deviation, 0.5)+">&#0177;0.5&#0176;&nbsp;C\n"
     "<option  value='1' "+getSelectedAttribute(thermostat_deviation, 1)+">&#0177;1.0&#0176;&nbsp;C\n"
-    "<select>\n"
+    "</select>\n"
     "</td></tr>\n"
 
     "<tr class='clsTR0'><th class='clsTH1'>Mode:</th>\n"
     "<td class='clsTD1'>"
     "<select name='thermostat_mode' class='clsSelect'>\n"
-    "<option  value='0' "+getSelectedAttribute(thermostat_mode, 0)+">Heating\n"
-    "<option  value='1' "+getSelectedAttribute(thermostat_mode, 1)+">Cooling\n"
-    "<select>\n"
+    "<option value='0' "+getSelectedAttribute(thermostat_mode, 0)+">Heating\n"
+    "<option value='1' "+getSelectedAttribute(thermostat_mode, 1)+">Cooling\n"
+    "</select>\n"
     "</td></tr>\n"
-
     "</table>");
     
 
@@ -587,17 +609,20 @@ void handleSwitch() {
     getSelectPinOptions(excludeGPIO2, array_count(excludeGPIO2), photosensor_pin)
   );
 
+  int ps_val = digitalRead(photosensor_pin); /* Считываем показание фотосенсора */
   /* Photosensor Status */
   sendChunk(
     String()+
     "</select>\n"
     "</td></tr>\n"
-    "<tr class='clsTR1'><th class='clsTH1' style='vertical-align:middle;padding-top:0px;'>Status:</th>"
+    "<tr class='clsTR1'><th class='clsTH1' style='vertical-align:middle;pa_dding-top:0px;'>Status:</th>"
     "<td class='clsTD1' style='vertical-align:middle;'>\n"
-    "<img id='psimg' class='clsIcon1' align='middle' "
-    "style='height:32px;width:32px;b_order:1px solid #336699;pa_dding:4px;'\n"
-    "src='"+(digitalRead(photosensor_pin)==1?"/night.png":"/day.png")+"' onload='document.getElementById(\"pstext\").innerText=(this.src.indexOf(\"day\")>=0?\"[Day]\":\"[Night]\");');'/>"
-    "<span id='pstext' style='vertical-align:middle;margin-left:12px;'>&nbsp;</span>"
+//    "<img id='psimg' class='clsIcon1' align='middle' "
+//    "style='height:32px;width:32px;b_order:1px solid #336699;pa_dding:4px;'\n"
+//    "src='"+(digitalRead(photosensor_pin)==1?"/night.png":"/day.png")+"' onload='document.getElementById(\"pstext\").innerText=(this.src.indexOf(\"day\")>=0?\"[Day]\":\"[Night]\");');'/>"
+    "<div id='pstext' s_tyle='vertical-align:middle;margin-left:12px;' class='"+(ps_val==1?"clsNIGHT":"clsDAY")+"'>"+
+    (ps_val==1?"NIGHT":"DAY")+
+    "</div>"
     "</td></tr>\n"
     "</table>\n");
 
@@ -653,14 +678,7 @@ void handleSwitch() {
   sendChunk( FPSTR(APPLYING_PANEL) );
   /* SSE script */
   sendChunk( FPSTR(SWITCH_SSE_SCRIPT) );
-  // $$$$$$$$$$$$$$
-  sendChunk( String()+
-    "<script>\n"
-    "window.onscroll=OnScroll;\n"
-    //"window.attachEvent('onscroll', OnScroll);\n"
-    //"window.attachEvent('onresize', OnScroll);\n"
-    "</script>\n"
-    );
+
   sendChunk( FPSTR(FINISH_DOC) );
 
   /* Empty chunk */
@@ -1419,7 +1437,7 @@ void sendStyle() {
 
 
 /********************
-* Handle Wheather Sensors
+* Handle Sensors
 */
 void handleSensors() {
 
@@ -1438,7 +1456,7 @@ void handleSensors() {
   sendChunk( FPSTR(ONEWIRE_PIN_CHANGED_SCRIPT) );
   sendChunk( FPSTR(FINISH_HEAD) );
 
-  sendChunk( StringExt(FPSTR(PAGE_HEADER)).replace("%s1","Wheather sensors") );
+  sendChunk( StringExt(FPSTR(PAGE_HEADER)).replace("%s1","Sensors") );
 
   sendChunk(
     String() +
@@ -1893,6 +1911,279 @@ void handleSensorsSSE() {
 
   if (debug) {
     Serial.print("handleSensorsSSE complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
+  }
+}
+
+/*************************
+* Handle "Thermostat" Page
+*/
+void handleThermostat() {
+  int started; 
+  if (debug) {
+    started = millis();
+    Serial.println("handleThermostat started");
+  }
+
+  server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
+  server.handleClient();
+
+  sendChunk( FPSTR(START_HEAD) );
+  sendChunk( FPSTR(META_TAGS) );
+  sendChunk( FPSTR(STYLE) );
+
+  /* MSIE не поддерживает SSE, поэтому принудительно обновляем страницу
+   * каждые 30 секунд
+   */
+  int refreshPeriod = 30;
+
+  /* script */
+  sendChunk(
+    String() +
+    "<script language='jscript'>\n"
+    "  var socket_state="+socket_state+";\n"
+    "  var power_is_on_s='"+FPSTR(POWER_IS_ON_S)+"';\n"
+    "  var power_is_off_s='"+FPSTR(POWER_IS_OFF_S)+"';\n"
+    "  var ua=navigator.userAgent; if (ua.search(/MSIE/)!=-1 || ua.search(/rv:11.0/)!=-1) { window.setTimeout(function(){location.reload(true)},"+String(refreshPeriod)+"000) }\n"
+    "</script>");
+
+  sendChunk( FPSTR(FINISH_HEAD) );
+  sendChunk( StringExt(FPSTR(PAGE_HEADER)).replace("%s1","Thermostat") );
+
+  if (socket_mode==SOCKET_MODE_THERMOSTAT) {
+    sendChunk(
+      String() +
+      "<form method='POST' action='thermostatsave'>\n"
+      "<input type='hidden' name='h' value='1'/>\n");
+      
+    /* Current thermostat status */
+    sendChunk(
+      String() +
+      "<table class='clsT1'\n><caption>Current Status</caption>\n");
+      
+    /* Current temperature */
+    float tempC = getCurrentTemperature(thermostat_sensor);
+       String sgn = "+"; if (tempC < 0) sgn="";
+    if (tempC != DEVICE_DISCONNECTED_C) {
+      /* Температура получена */
+      sendChunk( String()+
+        "<tr class='clsTR0'><th class='clsTH1'>Current T&#0176;:</th><td class='clsTD1' id='currtemp'>"+sgn+tempC+"&#0176;&nbsp;C</td></tr>\n"
+        );
+    }
+    else {
+      /* Температуру получить не удалось */
+      sendChunk( String()+
+        "<tr class='clsTR0'><th class='clsTH1'>Current T&#0176;:</th><td class='clsTD1' id='curtemp'>Unknown</td></tr>\n"
+        );
+    }
+  
+    /* Current socket status */
+    sendChunk(
+      String() +
+      "<tr class='clsTR1' id='socket_status_row' "+(socket_pin<0?"style='display:none'":"")+"><th class='clsTH1' style='vertical-align:middle;p_adding-top:0px;'>Status:</th>"
+      "<td class='clsTD1' style='white-space:nowrap;'>\n"
+      "<div id='sstate' class='"+
+      (socket_mode==SOCKET_MODE_RESETTER?(socket_state==1?"clsOFF":"clsON"):(socket_state==1?"clsON":"clsOFF"))+
+      "'>"+
+      (socket_mode==SOCKET_MODE_RESETTER?(socket_state==1?FPSTR(RESETTING_S):FPSTR(POWER_IS_ON_S)):(socket_state==1?FPSTR(POWER_IS_ON_S):FPSTR(POWER_IS_OFF_S)))+
+      "</div>\n"
+      "</td></tr>\n");
+  
+    /* Thermostat main options (desired temperature and deviation) */
+    sendChunk(
+      String() +
+      //"<table id='ts_opt_table' class='clsT1' "+(socket_pin<0 || socket_mode!=2?"style='display:none'":"")+"><caption>Thermostat Options</caption>\n"
+      "<tr class='clsTR0'><th class='clsTH1'>Desired T<sup>o</sup>:</th>\n"
+      "<td class='clsTD1'>"
+      );
+    sendChunk( String() +
+      "<select name='thermostat_temperature' class='clsSelect'>\n"
+      "<option  value='4' "+getSelectedAttribute(thermostat_temperature,  4)+">+4&#0176;&nbsp;C\n"
+      "<option  value='5' "+getSelectedAttribute(thermostat_temperature,  5)+">+5&#0176;&nbsp;C\n"
+      "<option  value='6' "+getSelectedAttribute(thermostat_temperature,  6)+">+6&#0176;&nbsp;C\n"
+      "<option  value='7' "+getSelectedAttribute(thermostat_temperature,  7)+">+7&#0176;&nbsp;C\n"
+      "<option  value='8' "+getSelectedAttribute(thermostat_temperature,  8)+">+8&#0176;&nbsp;C\n"
+      "<option  value='9' "+getSelectedAttribute(thermostat_temperature,  9)+">+9&#0176;&nbsp;C\n"
+      "<option  value='10' "+getSelectedAttribute(thermostat_temperature, 10)+">+10&#0176;&nbsp;C\n"
+      "<option  value='11' "+getSelectedAttribute(thermostat_temperature, 11)+">+11&#0176;&nbsp;C\n"
+      "<option  value='12' "+getSelectedAttribute(thermostat_temperature, 12)+">+12&#0176;&nbsp;C\n"
+      "<option  value='13' "+getSelectedAttribute(thermostat_temperature, 13)+">+13&#0176;&nbsp;C\n"
+      "<option  value='14' "+getSelectedAttribute(thermostat_temperature, 14)+">+14&#0176;&nbsp;C\n"
+      "<option  value='15' "+getSelectedAttribute(thermostat_temperature, 15)+">+15&#0176;&nbsp;C\n"
+      );
+    sendChunk( String() +
+      "<option  value='16' "+getSelectedAttribute(thermostat_temperature, 16)+">+16&#0176;&nbsp;C\n"
+      "<option  value='17' "+getSelectedAttribute(thermostat_temperature, 17)+">+17&#0176;&nbsp;C\n"
+      "<option  value='18' "+getSelectedAttribute(thermostat_temperature, 18)+">+18&#0176;&nbsp;C\n"
+      "<option  value='19' "+getSelectedAttribute(thermostat_temperature, 19)+">+19&#0176;&nbsp;C\n"
+      "<option  value='20' "+getSelectedAttribute(thermostat_temperature, 20)+">+20&#0176;&nbsp;C\n"
+      "<option  value='21' "+getSelectedAttribute(thermostat_temperature, 21)+">+21&#0176;&nbsp;C\n"
+      "<option  value='22' "+getSelectedAttribute(thermostat_temperature, 22)+">+22&#0176;&nbsp;C\n"
+      "<option  value='23' "+getSelectedAttribute(thermostat_temperature, 23)+">+23&#0176;&nbsp;C\n"
+      "<option  value='24' "+getSelectedAttribute(thermostat_temperature, 24)+">+24&#0176;&nbsp;C\n"
+      "<option  value='25' "+getSelectedAttribute(thermostat_temperature, 25)+">+25&#0176;&nbsp;C\n"
+      "<option  value='26' "+getSelectedAttribute(thermostat_temperature, 26)+">+26&#0176;&nbsp;C\n"
+      "<option  value='27' "+getSelectedAttribute(thermostat_temperature, 27)+">+27&#0176;&nbsp;C\n"
+      "<option  value='28' "+getSelectedAttribute(thermostat_temperature, 28)+">+28&#0176;&nbsp;C\n"
+      "<option  value='29' "+getSelectedAttribute(thermostat_temperature, 29)+">+29&#0176;&nbsp;C\n"
+      "<option  value='30' "+getSelectedAttribute(thermostat_temperature, 30)+">+30&#0176;&nbsp;C\n"
+      "</select>\n"
+      "</table>");
+  
+  
+    /* Apply Button */
+    sendChunk(
+      String() +
+      "<input class='clsBtn' type='submit' onclick='ap.style.visibility=\"visible\";' value='Apply' />\n"
+      "</form>\n"
+      );
+  } /* if socket_mode = THERMOSTAT */
+  else {
+    /* socket_mode != THERMOSTAT */
+    sendChunk(
+      String()+
+      "Device is not in Thermostat mode now.<br>\n"
+    );
+    /* принудительно обновляем страницу каждые 30 секунд */
+  sendChunk(
+    String() +
+    "<script language='jscript'>\n"
+    "  window.setTimeout(function(){location.reload(true)},"+String(refreshPeriod)+"000)\n"
+    "</script>");
+  }
+
+  /* Navigation menu */
+  sendChunk( FPSTR(NAVIGATION_MENU) );
+  /* Applying panel */
+  sendChunk( FPSTR(APPLYING_PANEL) );
+  
+  if (socket_mode==SOCKET_MODE_THERMOSTAT) {
+    /* SSE script */
+    sendChunk( FPSTR(THERMOSTAT_SSE_SCRIPT) );
+  }
+  
+  sendChunk( FPSTR(FINISH_DOC) );
+  /* Empty chunk */
+  sendChunk( "" );
+
+  server.client().flush();
+  server.client().stop();
+
+  if (debug) {
+    Serial.print("handleThermostat complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
+  }
+}
+
+/******************************************
+* Handle Saving Thermostat Options
+*******************************************/
+void handleThermostatSave() {
+
+  Serial.begin(115200);
+
+  int started; 
+  if (debug) {
+    started = millis();
+    Serial.println("handleThermostatSave started");
+  }
+
+  if (server.arg("h")=="1") {
+    /* Из блока настроек switch фактически меням только thermostat_temperature */
+    thermostat_temperature = server.arg("thermostat_temperature").toFloat();
+    /* Но сохраняем весь блок */
+    /** STORE TO EEPROM ********/
+    struct switch_v1_t C;
+    C.socket_pin = socket_pin;
+    C.socket_mode = socket_mode;
+    C.switcher_photosensor_enabled = switcher_photosensor_enabled;
+    C.switcher_timers_enabled = switcher_timers_enabled;
+    C.photosensor_pin = photosensor_pin;
+    C.resetter_ping_checker_enabled = resetter_ping_checker_enabled;
+    C.resetter_ping_IP = resetter_ping_IP;
+    C.resetter_ping_fault_limit = resetter_ping_fault_limit;
+    C.resetter_timers_enabled = resetter_timers_enabled;
+    memcpy(C.thermostat_sensor, thermostat_sensor, sizeof(thermostat_sensor));
+    C.thermostat_temperature = thermostat_temperature;
+    C.thermostat_deviation = thermostat_deviation;
+    C.thermostat_mode = thermostat_mode;
+    
+    storeSwitchBlock(C);
+    /**********************************/
+    Serial.println("termostatsave complete");
+
+    /* Форсируем вызов процесса термостата */
+    thermostatFlag = true;
+  }
+  else {
+    Serial.println("termostatsave aborted. no data.");
+  }
+  // Redirect to "thermostat" page
+  server.sendHeader("Location", "thermostat", true);
+  server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  server.sendHeader("Pragma", "no-cache");
+  server.sendHeader("Expires", "-1");
+  server.send ( 302, "text/plain", "");  // Empty content inhibits Content-length header so we have to close the socket ourselves.
+  server.client().stop(); // Stop is needed because we sent no content length
+
+  if (debug) {
+    Serial.print("handleThermostatSave complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
+  }
+  
+}
+
+/**************************************
+* Handle Thermostat Page Server-Send Events
+*/
+void handleThermostatSSE() {
+
+  int started; 
+  if (debug) {
+    started = millis();
+    Serial.println("handleThermostatSSE started");
+  }
+
+  String Header, result;
+  Header = "HTTP/1.1 200 OK\r\n";
+  Header += "Content-Type: text/event-stream;\r\n";
+  Header += "Cache-Control: no-cache\r\n";
+  Header += "\r\n";  
+  server.sendContent(Header);
+  server.handleClient();
+  
+
+  if (socket_mode==SOCKET_MODE_THERMOSTAT) {
+    result  = "retry: 3000\n"; // реальный интервал обновления ~ 5-6 сек.
+    /* Состояние розетки для подключения нагрузки */
+    result += "event: socketState\n";
+    result += "data: ";
+    result += socket_state;
+    result += "\n\n";
+  
+    /* Считываем температуру с датчика термостата */
+    float tempC = getCurrentTemperature(thermostat_sensor);
+    if (tempC != DEVICE_DISCONNECTED_C) {
+      String sgn = (tempC<0?"":"+");
+      result += "event: currTemp\n";
+      result += "data: ";
+      result += sgn + tempC+"&#0176;&nbsp;C";
+      result += "\n\n";
+    }
+    else {
+      result += "event: currTemp\n";
+      result += "data: Unknown";
+      result += "\n\n";
+    }
+  }
+  else {
+    result += "event: invalidSocketMode\n";
+    result += "data: empty";
+    result += "\n\n";
+  }
+  server.sendContent(result);
+  server.client().flush();
+  server.client().stop();
+
+  if (debug) {
+    Serial.print("handleThermostatSSE complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
   }
 }
 

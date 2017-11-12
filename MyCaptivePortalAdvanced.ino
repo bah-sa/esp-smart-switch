@@ -33,7 +33,7 @@
 #define debug true // вывод отладочных сообщений
 
 #define array_count(array) sizeof(array)/sizeof(array[0])
-#define firmware_version "0.9.4.2"
+#define firmware_version "0.9.5.2"
 
 #define P0 1013.25 
 BMP280 bmp; 

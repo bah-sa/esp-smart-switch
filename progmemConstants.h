@@ -73,6 +73,10 @@ const char STYLE[] PROGMEM =
   ".clsBtn {font:normal 12pt helvetica;border:1px solid #999999;width:100%;padding:6px 8px 6px 8px;margin-top:24px;background:#CCFFCC;}\n"
   ".clsIcon1 {height:48px;width:48px;}\n"
   ".clsSelect {font:normal 10pt helvetica;border-top:0px;border-left:0px;border-right:0px;border-bottom:1px solid #336699;width:80%;padding:6px 8px 4px 8px;background-color:transparent;}\n"
+  ".clsON  {background:#339933;padding:4px 8px 4px 8px;color:#FFFFFF;margin-right:8px;display:inline-block;}\n"
+  ".clsOFF {background:#999999;padding:4px 8px 4px 8px;color:#FFFFFF;margin-right:8px;display:inline-block;}\n"
+  ".clsDAY {background:#FFFF99;padding:4px 8px 4px 8px;color:#000000;display:inline-block;}\n"
+  ".clsNIGHT {background:#333333;padding:4px 8px 4px 8px;color:#FFFFFF;;display:inline-block;}\n"
   "</style>\n";
 
 /*   
@@ -83,10 +87,10 @@ const char NAVIGATION_MENU[] PROGMEM =
     "<a class='clsA1' href='/info'>Info</a>\n"
     "<a class='clsA1' href='/wifi'>WiFi&nbsp;config</a>\n"
     "<a class='clsA1' href='/time'>Time&nbsp;settings</a>\n"
-    //"<a class='clsA1' href='/ping'>Ping&nbsp;check</a>\n"
     "<a class='clsA1' href='/switch'>Smart&nbsp;switch</a>\n"
-    //"<a class='clsA1' href='/temp'>T<sup>o</sup>&nbsp;sensors</a>\n"
-    "<a class='clsA1' href='/sensors'>Wheather&nbsp;sensors</a>\n"
+    //"<a class='clsA1' href='/sensors'>Wheather&nbsp;sensors</a>\n"
+    "<a class='clsA1' href='/sensors'>Sensors</a>\n"
+    "<a class='clsA1' href='/thermostat'>Thermostat</a>\n"
     "<a class='clsA1' href='/reboot'>Reboot&nbsp;device</a>\n"
     //"<a href='/wificlear'>Clear credentials</a>&nbsp;&nbsp;"
     ;
@@ -131,24 +135,28 @@ const char SWITCH_SSE_SCRIPT[] PROGMEM =
     "if (typeof(EventSource) != 'undefined') {\n"
       "var source = new EventSource('/sse');\n"
       
-      "var ssImg = document.getElementById('ssimg');\n"
-      "source.addEventListener('socketState', function(e) { var newSSsrc='/sw?st='; \n"
-      "if (document.all('socket_mode')[1].checked) {\n"
-      " newSSsrc += (e.data==0?'idle':'reset');\n"
-      "} else {\n"
-      " newSSsrc += (e.data==0?'off':'on');\n"
+      "var sstate = document.getElementById('sstate');\n"
+      "var saction = document.getElementById('saction');\n"
+      "source.addEventListener('socketState', function(e) {\n"
+      "if (document.all('socket_mode')[1].checked) {\n" /* resetter */
+      " sstate.innerText = (e.data==0?power_is_on_s:resetting_s);\n"
+      " sstate.className = (e.data==0?'clsON':'clsOFF');\n"
+      " saction.innerText = (e.data==0?reset_s:'');\n"
+      "} else {\n" /* другие режимы */
+      " sstate.innerText = (e.data==0?power_is_off_s:power_is_on_s);\n"
+      " sstate.className = (e.data==0?'clsOFF':'clsON');\n"
+      " saction.innerText = (e.data==0?switch_on_s:switch_off_s);\n"
       "}\n"
-      "if (ssImg.src.indexOf(newSSsrc)<0) ssImg.src = newSSsrc;"
+      "socket_state=e.data;\n"
       "});\n"
       
-      "var psImg = document.getElementById('psimg');\n"
+      "var pstext = document.getElementById('pstext');\n"
       "source.addEventListener('photosensorState', function(e) {\n"
-      "var newPSsrc = (e.data==0?'day.png':'night.png');\n"
-      "if (psImg.src.indexOf(newPSsrc)<0) {psImg.src = newPSsrc;}"
+      "pstext.innerText = (e.data==0?'DAY':'NIGHT');\n"
+      "pstext.className = (e.data==0?'clsDAY':'NIGHT');\n"
       "});\n"
 
       "var tck = document.getElementById('ticker');\n"
-      "var spn = document.getElementById('spinner');\n"
       "var cmnt = document.getElementById('comment');\n"
       "var tim;\n"
       "var prevSrc;"
@@ -156,13 +164,48 @@ const char SWITCH_SSE_SCRIPT[] PROGMEM =
       "  var n=tck.innerText;"
       "  if (n>0) { n--; tck.innerText=n; prevSrc=ssImg.src; }\n"
       "  else { var newSrc='/sw?st='+(prevSrc.indexOf('on')<0?'on':'off'); if(ssImg.src.indexOf(newSrc)<0) ssImg.src=newSrc;\n"
-      "  tck.style.visibility='hidden'; spn.style.visibility='hidden'; cmnt.style.visibility='hidden'; window.clearInterval(tim); }\n"
+      "  tck.style.visibility='hidden';"
+      "  cmnt.style.visibility='hidden';"
+      "  window.clearInterval(tim); }\n"
       "}\n"
       "source.addEventListener('timeToSwitch', function(e) {\n"
       "var data = JSON.parse(e.data);\n"
       "var tts=data.tts; var to=data.to;\n"
-      "if (tts==0) {tck.style.visibility='hidden';spn.style.visibility='hidden';cmnt.style.visibility='hidden';window.clearInterval(tim);}\n"
-      "else {tck.innerText=tts;cmnt.innerText='sec. to '+to; tck.style.visibility='visible'; spn.style.visibility='visible'; cmnt.style.visibility='visible'; window.clearInterval(tim);tim=window.setInterval('tick()',1000);}"
+      "if (tts==0) {"
+      " tck.style.visibility='hidden';"
+      " cmnt.style.visibility='hidden';"
+      " window.clearInterval(tim);}\n"
+      "else {"
+      " tck.innerText=tts;cmnt.innerText='sec. to '+to;"
+      " tck.style.visibility='visible';"
+      " cmnt.style.visibility='visible';"
+      " window.clearInterval(tim);tim=window.setInterval('tick()',1000);}"
+      "});\n"
+      
+    "}\n"
+    "</script>\n";
+
+/*    
+ * Thermostat page SSE script
+ */
+const char THERMOSTAT_SSE_SCRIPT[] PROGMEM = 
+    "<script language='jscript'>\n"
+    "if (typeof(EventSource) != 'undefined') {\n"
+      "var source = new EventSource('/thermostatsse');\n"
+      
+      "var sstate = document.getElementById('sstate');\n"
+      "source.addEventListener('socketState', function(e) {\n"
+      " sstate.innerText = (e.data==0?power_is_off_s:power_is_on_s);\n"
+      " sstate.className = (e.data==0?'clsOFF':'clsON');\n"
+      "});\n"
+      
+      "var currtemp = document.getElementById('currtemp');\n"
+      "source.addEventListener('currTemp', function(e) {\n"
+      " currtemp.innerHTML=e.data;\n"
+      "});\n"
+
+      "source.addEventListener('invalidSocketMode', function(e) {\n"
+      " location.reload(true);\n"
       "});\n"
       
     "}\n"
@@ -259,4 +302,12 @@ const char AP_SSID_PREFIX_S[] PROGMEM = "ESP8266_AP_";
 const char APP_STARTING_S[] PROGMEM = " Starting...";
 
 const int RESET_PERIOD = 10; // sec
+
+const char POWER_IS_ON_S[]  PROGMEM = "Power is On";
+const char POWER_IS_OFF_S[] PROGMEM = "Power is Off";
+const char SWITCH_ON_S[]  PROGMEM = "Switch On";
+const char SWITCH_OFF_S[] PROGMEM = "Switch Off";
+const char RESET_S[] PROGMEM = "Reset";
+const char RESETTING_S[] PROGMEM = "Resetting";
+const char EMPTY_S[] PROGMEM = "";
 

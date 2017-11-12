@@ -11,9 +11,6 @@ void checkThermostatState() {
   float tempC = getCurrentTemperature(thermostat_sensor);
   if (tempC != DEVICE_DISCONNECTED_C) {
     /* Температура получена */
-//    Serial.println("===> checkThermostatState ===>");
-//    Serial.print("tempC=");
-//    Serial.println(tempC);
 
     float lowThreshold = thermostat_temperature - thermostat_deviation;
     float highThreshold = thermostat_temperature + thermostat_deviation;

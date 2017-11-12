@@ -29,6 +29,9 @@ void startWebServer(int port) {
   server.on("/sensorssse", handleSensorsSSE);
   server.on("/sw", handleSw);
   server.on("/sse", handleSSE);
+  server.on("/thermostat", handleThermostat);
+  server.on("/thermostatsave", handleThermostatSave);
+  server.on("/thermostatsse", handleThermostatSSE);
   server.onNotFound ( handleNotFound );
   //server.on("/chunktest", handleChunkTest);
   
