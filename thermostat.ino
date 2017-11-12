@@ -11,7 +11,6 @@ void checkThermostatState() {
   float tempC = getCurrentTemperature(thermostat_sensor);
   if (tempC != DEVICE_DISCONNECTED_C) {
     /* Температура получена */
-
     float lowThreshold = thermostat_temperature - thermostat_deviation;
     float highThreshold = thermostat_temperature + thermostat_deviation;
 
@@ -73,9 +72,18 @@ float getCurrentTemperature(DeviceAddress devAddr) {
       float dht22temp = 0;
       float dht22humidity = 0;
       int err = SimpleDHTErrSuccess;
-      if ((err = dht22.read2(dht22_pin, &dht22temp, &dht22humidity, NULL)) == SimpleDHTErrSuccess) {
+      //delay(100);
+      /* первая попытка - иногда дает ошибку */
+      err = dht22.read2(dht22_pin, &dht22temp, &dht22humidity, NULL);
+      if (err != SimpleDHTErrSuccess) {
+        /* вторая попытка */
+        err = dht22.read2(dht22_pin, &dht22temp, &dht22humidity, NULL);
+      }
+      if (err == SimpleDHTErrSuccess) {
         result = dht22temp;
       }
+      else 
+        Serial.println("===> getCurrentTemperature ERROR ===> DHT22 read error!");
     }
   } else {
     /* OneWire DS18B20 */
@@ -88,6 +96,7 @@ float getCurrentTemperature(DeviceAddress devAddr) {
       result = sensors.getTempC(devAddr);
     }
   }
+  Serial.print("===> getCurrentTemperature result="); Serial.println(result);
   return result;  
 }
 

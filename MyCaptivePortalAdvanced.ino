@@ -33,7 +33,7 @@
 #define debug true // вывод отладочных сообщений
 
 #define array_count(array) sizeof(array)/sizeof(array[0])
-#define firmware_version "0.9.5.2"
+#define firmware_version "0.9.5.3"
 
 #define P0 1013.25 
 BMP280 bmp; 
@@ -329,7 +329,8 @@ void handlePhotosensorState() {
  */
 void loop() {
 
-  //Serial.println("loop"); delay(1);
+  //Serial.println("loop"); 
+  delay(1);
 
   /* Handle photosensor */
   if (photosensor_pin>=0) {

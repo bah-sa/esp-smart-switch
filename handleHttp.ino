@@ -10,6 +10,16 @@ void sendChunk(String chunk) {
   server.sendContent( chunk+"\r\n" );
   
 }
+/**
+ * Завершаем отправку chunked респонса
+ */
+void flushChunkedResponse() {
+  /* Send empty chunk */
+  sendChunk( "" );
+  server.client().flush();
+  delay(1); // Даем время, чтобы принять данные
+  server.client().stop(); // Stop is needed because we sent no content length
+}
 
 String _t = "A";
 /************
@@ -29,11 +39,8 @@ void handleChunkTest() {
 
   sendChunk(_t);
 
-  // Empty chunk
-  sendChunk( "" );
-  
-  server.client().flush(); //$$$
-  server.client().stop(); // Stop is needed because we sent no content length
+  // Finish chunked response
+  flushChunkedResponse();
 
   if (debug) {
     Serial.print("handleChunkTest complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -91,11 +98,8 @@ else
   
   sendChunk( FPSTR(FINISH_DOC) );
   
-  /* Empty chunk */
-  sendChunk( "" );
-  
-  server.client().flush(); //$$$
-  server.client().stop(); // Stop is needed because we sent no content length
+  // Finish chunked response
+  flushChunkedResponse();
 
   if (debug) {
     Serial.print("handleRoot complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -210,12 +214,10 @@ void handleInfo() {
 
   sendChunk( FPSTR(FINISH_DOC) );
   
-  /* Empty chunk */
-  sendChunk( "" );
-  
-  server.client().flush(); //$$$
 //  Serial.println("handleInfo CP#10");
-  server.client().stop(); // Stop is needed because we sent no content length
+
+  /* Finish chunked response */
+  flushChunkedResponse();
   
   if (debug) {
     Serial.print("handleInfo complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -681,11 +683,8 @@ void handleSwitch() {
 
   sendChunk( FPSTR(FINISH_DOC) );
 
-  /* Empty chunk */
-  sendChunk( "" );
-
-  server.client().flush();
-  server.client().stop();
+  // Finish chunked response
+  flushChunkedResponse();
   
   if (debug) {
     Serial.print("handleSwitch complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -884,11 +883,8 @@ void handleWifi() {
 
   sendChunk( FPSTR(FINISH_DOC) );
   
-  /* Empty chunk */
-  sendChunk( "" );
-  
-  server.client().flush();
-  server.client().stop();
+  // Finish chunked response
+  flushChunkedResponse();
 
   if (debug) {
     Serial.print("handleWifi complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -1098,11 +1094,8 @@ void handleTime() {
     
   sendChunk( FPSTR(FINISH_DOC) );
 
-  /* Empty chunk */
-  sendChunk( "" );
-
-  server.client().flush();
-  server.client().stop();
+  // Finish chunked response
+  flushChunkedResponse();
 
   if (debug) {
     Serial.print("handleTime complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -1231,12 +1224,8 @@ void handleReboot() {
     "</script>\n"
     );
     
-  sendChunk( FPSTR(FINISH_DOC) );
-  
-  /* Empty chunk */
-  sendChunk( "" );
-
-  server.client().stop();
+  // Finish chunked response
+  flushChunkedResponse();
   
   delay(500);
   rebootDevice();
@@ -1334,11 +1323,8 @@ void handleNotFound() {
   
     sendChunk( FPSTR(FINISH_DOC) );
     
-    /* Empty chunk */
-    sendChunk( "" );
-  
-    server.client().flush();
-    server.client().stop();
+    // Finish chunked response
+    flushChunkedResponse();
   }
 
   if (debug) {
@@ -1670,11 +1656,9 @@ void handleSensors() {
   sendChunk( FPSTR(SENSORS_SSE_SCRIPT) );
 
   sendChunk( FPSTR(FINISH_DOC) );
-  /* Empty chunk */
-  sendChunk( "" );
   
-  server.client().flush();
-  server.client().stop();
+  // Finish chunked response
+  flushChunkedResponse();
 
   if (debug) {
     Serial.print("handleSensors complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -1814,6 +1798,7 @@ void handleSSE() {
     
     server.sendContent(result);
     server.client().flush();
+    delay(1);
     server.client().stop();
   //} // for
 
@@ -1907,6 +1892,7 @@ void handleSensorsSSE() {
   
   server.sendContent(result);
   server.client().flush();
+  delay(1);
   server.client().stop();
 
   if (debug) {
@@ -2062,11 +2048,9 @@ void handleThermostat() {
   }
   
   sendChunk( FPSTR(FINISH_DOC) );
-  /* Empty chunk */
-  sendChunk( "" );
-
-  server.client().flush();
-  server.client().stop();
+  
+  // Finish chunked response
+  flushChunkedResponse();
 
   if (debug) {
     Serial.print("handleThermostat complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
@@ -2151,7 +2135,7 @@ void handleThermostatSSE() {
   
 
   if (socket_mode==SOCKET_MODE_THERMOSTAT) {
-    result  = "retry: 3000\n"; // реальный интервал обновления ~ 5-6 сек.
+    result  = "retry: 8000\n"; // реальный интервал обновления ~ 10 сек.
     /* Состояние розетки для подключения нагрузки */
     result += "event: socketState\n";
     result += "data: ";
@@ -2178,8 +2162,10 @@ void handleThermostatSSE() {
     result += "data: empty";
     result += "\n\n";
   }
+  
   server.sendContent(result);
   server.client().flush();
+  delay(1);
   server.client().stop();
 
   if (debug) {

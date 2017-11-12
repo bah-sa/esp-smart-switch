@@ -3,19 +3,21 @@
  */
 const char RESPONSE_HTTP_200_HEADER[] PROGMEM = 
   "HTTP/1.1 200 OK\r\n"
-  "Content-Type: text/html;\r\n"
+  "Content-Type: text/html\r\n"
   "Cache-Control: no-cache, no-store, must-revalidate\r\n"
   "Pragma: no-cache\r\n"
   "Expires: -1\r\n"
+  "Connection: close\r\n"
   "\r\n";
   
 const char RESPONSE_HTTP_200_HEADER_CHUNKED[] PROGMEM = 
   "HTTP/1.1 200 OK\r\n"
-  "Content-Type: text/html;\r\n"
+  "Content-Type: text/html\r\n"
   "Cache-Control: no-cache, no-store, must-revalidate\r\n"
   "Pragma: no-cache\r\n"
   "Expires: -1\r\n"
   "Transfer-Encoding: chunked\r\n"
+  "Connection: close\r\n"
   "\r\n";
 
 const char START_HEAD[] PROGMEM = 
@@ -200,9 +202,11 @@ const char THERMOSTAT_SSE_SCRIPT[] PROGMEM =
       "});\n"
       
       "var currtemp = document.getElementById('currtemp');\n"
+      "window.setTimeout(function(){" /* таймаут, т.к. первое обращение часто выдает DEVICE_DISCONNECTED_C */
       "source.addEventListener('currTemp', function(e) {\n"
       " currtemp.innerHTML=e.data;\n"
       "});\n"
+      "},5000);"
 
       "source.addEventListener('invalidSocketMode', function(e) {\n"
       " location.reload(true);\n"
