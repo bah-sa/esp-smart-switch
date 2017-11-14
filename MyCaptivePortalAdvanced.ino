@@ -1,12 +1,16 @@
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
 /*#include <DNSServer.h>*/
+#include <ESP8266WiFi.h>
+//#include <ESP8266mDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 #include <ESP8266mDNS.h>
 #include <EEPROM.h>
 #include <RtcDS3231.h>
 #include <Wire.h>
 #include <NTPClient.h>
-#include <WiFiUdp.h>
+//#include <WiFiUdp.h>
 #include <ESP8266Ping.h>
 #include <Ticker.h>
 #include <OneWire.h>
@@ -39,6 +43,10 @@
 BMP280 bmp; 
 
 ADC_MODE(ADC_VCC);
+
+  const char* www_username = "root";
+  const char* www_password = "root";
+
 
 /* Web Server Port */
 int http_port = 80;
@@ -200,8 +208,8 @@ void setup() {
   loadSensorsBlock();
   loadSwitchBlock();
 
-  /* TEST TEST TEST */
-  //loadCredentialsBlock2();
+  /* OTA init */
+  ArduinoOTA.begin();
 
   int webPort=80;
   if (loadCredentialsBlock() && setupButtonState==HIGH) { // Load WLAN credentials from EEPROM
@@ -241,35 +249,7 @@ void setup() {
   dnsServer.start(DNS_PORT, "*", apIP);
   Serial.println("DNSServer started.");
 */
-
   startWebServer(webPort);
-/*  
-  server = ESP8266WebServer(webPort);
-  Serial.print("WebServer started on port "); Serial.println(http_port);
-
-  // Setup web pages: root, wifi config pages, etc.
-  server.on("/", handleRoot);
-  server.on("/hotspot-detect.html", handleRoot);
-  server.on("/info", handleInfo);
-  server.on("/wifi", handleWifi);
-  server.on("/wifisave", handleWifiSave);
-  //server.on("/wificlear", handleWifiClear);
-  server.on("/time", handleTime);
-  server.on("/timesave", handleTimeSave);
-  server.on("/reboot", handleReboot);
-  server.on("/switch", handleSwitch);
-  server.on("/switchsave", handleSwitchSave);
-  server.on("/sensors", handleSensors);
-  server.on("/sensorssave", handleSensorsSave);
-  server.on("/sensorssse", handleSensorsSSE);
-  server.on("/sw", handleSw);
-  server.on("/sse", handleSSE);
-  server.onNotFound ( handleNotFound );
-  //server.on("/chunktest", handleChunkTest);
-  
-  server.begin(); // Web server start
-  Serial.println("HTTP server started.");
-*/  
 }
 
 /************************
@@ -328,6 +308,8 @@ void handlePhotosensorState() {
  * Рабочий цикл
  */
 void loop() {
+
+  ArduinoOTA.handle();
 
   //Serial.println("loop"); 
   delay(1);

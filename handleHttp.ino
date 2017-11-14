@@ -21,34 +21,6 @@ void flushChunkedResponse() {
   server.client().stop(); // Stop is needed because we sent no content length
 }
 
-String _t = "A";
-/************
-* Handle root
-*/
-/*
-void handleChunkTest() {
-
-  int started; 
-  if (debug) {
-    started = millis();
-    Serial.println("handleChunkTest started");
-  }
-
-  server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
-
-  sendChunk(_t);
-
-  // Finish chunked response
-  flushChunkedResponse();
-
-  if (debug) {
-    Serial.print("handleChunkTest complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
-  }
-
-  _t += "A";
-}
-*/
 
 /************
 * Handle root

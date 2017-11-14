@@ -76,6 +76,7 @@ float getCurrentTemperature(DeviceAddress devAddr) {
       /* первая попытка - иногда дает ошибку */
       err = dht22.read2(dht22_pin, &dht22temp, &dht22humidity, NULL);
       if (err != SimpleDHTErrSuccess) {
+        delay(400);
         /* вторая попытка */
         err = dht22.read2(dht22_pin, &dht22temp, &dht22humidity, NULL);
       }

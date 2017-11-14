@@ -13,6 +13,14 @@ void startWebServer(int port) {
   server = ESP8266WebServer(port);
   
   /* Setup web pages: root, wifi config pages, etc. */
+  /*
+  server.on("/", [](){
+    if(!server.authenticate(www_username, www_password))
+      return server.requestAuthentication();
+      server.send(200, "text/plain", "Login OK");
+  });  
+  */
+  
   server.on("/", handleRoot);
   server.on("/hotspot-detect.html", handleRoot);
   server.on("/info", handleInfo);
