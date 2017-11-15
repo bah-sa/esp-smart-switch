@@ -47,7 +47,7 @@ struct credentials_v1_t
     IPAddress     dns2;         // static dns2
 };
 
-/*  Вторая версия структуры, отличается от первой добавленным параметром dns3 */
+/*  Вторая версия структуры, отличается от первой добавленным параметром http_port */
 struct credentials_v2_t
 {
     const byte ver = 2;         // structure version
@@ -64,16 +64,36 @@ struct credentials_v2_t
     int      http_port;         // web server port
 };
 
+/*  3-я версия структуры, отличается от первой добавленными параметрами www_username и www_password */
+struct credentials_v3_t
+{
+    const byte ver = 3;         // structure version
+    const byte len = 
+      sizeof(credentials_v3_t); // structure size
+    char      ssid[32];         // ssid
+    char  password[32];         // password
+    boolean  dhcp_flag;         // use DHCP
+    IPAddress       ip;         // static ip
+    IPAddress  gateway;         // static gateway
+    IPAddress   subnet;         // subnet mask
+    IPAddress     dns1;         // static dns1
+    IPAddress     dns2;         // static dns2
+    int      http_port;         // web server port
+    char www_username[16];      // www_username
+    char www_password[16];      // www_password
+};
+
 union credentials_u {
   struct credentials_v1_t V1;
   struct credentials_v2_t V2;
+  struct credentials_v3_t V3;
 };
 
 
 /*
  * Запись актуальной версии структуры
  */
-void storeCredentialsBlock(struct credentials_v2_t C) {
+void storeCredentialsBlock(struct credentials_v3_t C) {
   int p=0; /* Адрес блока CREDENTIALS */
   EEPROM.begin(4096);
   EEPROM.put(p, C);
@@ -111,6 +131,8 @@ boolean loadCredentialsBlock() {
   stDns1 = INADDR_NONE;
   stDns2 = INADDR_NONE;
   http_port = 80;
+  www_username[0] = 0;
+  www_password[0] = 0;
 
   //Serial.print("CREDENTIALS ver="); Serial.println(U.V1.ver);
   //Serial.print("CREDENTIALS len="); Serial.println(U.V1.len);
@@ -130,7 +152,7 @@ boolean loadCredentialsBlock() {
   }
   else if (U.V1.ver==2 && U.V1.len==sizeof(credentials_v2_t)) {
     Serial.println("CREDENTIALS\tversion#2 in store.");
-    EEPROM.get(EEPROM_CREDENTIALS_BLOCK_ADDRESS, U.V2); // Считываем данные во вторую версию структуры
+    EEPROM.get(EEPROM_CREDENTIALS_BLOCK_ADDRESS, U.V2); // Считываем данные во 2-ю версию структуры
     // Разбор параметров структуры
     strncpy(ssid, U.V2.ssid, sizeof(U.V2.ssid)); // dest,src,size
     strncpy(password, U.V2.password, sizeof(U.V2.password));
@@ -141,6 +163,22 @@ boolean loadCredentialsBlock() {
     stDns1 = U.V2.dns1;
     stDns2 = U.V2.dns2;
     http_port = U.V2.http_port; // Новый параметр в структуре
+  }
+  else if (U.V1.ver==3 && U.V1.len==sizeof(credentials_v3_t)) {
+    Serial.println("CREDENTIALS\tversion#3 in store.");
+    EEPROM.get(EEPROM_CREDENTIALS_BLOCK_ADDRESS, U.V3); // Считываем данные в 3-ю версию структуры
+    // Разбор параметров структуры
+    strncpy(ssid, U.V3.ssid, sizeof(U.V3.ssid)); // dest,src,size
+    strncpy(password, U.V3.password, sizeof(U.V3.password));
+    stDhcpFlag = U.V3.dhcp_flag;
+    stIP = U.V3.ip;
+    stGateway = U.V3.gateway;
+    stSubnet = U.V3.subnet;
+    stDns1 = U.V3.dns1;
+    stDns2 = U.V3.dns2;
+    http_port = U.V3.http_port;
+    strncpy(www_username, U.V3.www_username, sizeof(U.V3.www_username)); // dest,src,size
+    strncpy(www_password, U.V3.www_password, sizeof(U.V3.www_password));
   }
   else {
     Serial.println("Default CREDENTIALS Parameters applied.");
@@ -155,6 +193,8 @@ boolean loadCredentialsBlock() {
   Serial.print("subnet="); Serial.println(toStringIp(stSubnet));
   Serial.print("dns1="); Serial.println(toStringIp(stDns1));
   Serial.print("dns2="); Serial.println(toStringIp(stDns2));
+  Serial.print("www_username="); Serial.println(www_username);
+  Serial.print("www_password="); Serial.println(www_password);
 */
   return result;
 }

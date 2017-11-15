@@ -2,13 +2,8 @@
  * Отправка чанка (Transfer-Encoding: chunked)
  */
 void sendChunk(String chunk) {
-//  if (debug) {
-//    Serial.println(String(chunk.length(),HEX));
-//    Serial.println(chunk);
-//  }
   server.sendContent( String(chunk.length(),HEX)+"\r\n");
   server.sendContent( chunk+"\r\n" );
-  
 }
 /**
  * Завершаем отправку chunked респонса
@@ -21,11 +16,27 @@ void flushChunkedResponse() {
   server.client().stop(); // Stop is needed because we sent no content length
 }
 
+boolean authenticationRequired() {
+  boolean result = true;
+  
+  if (www_username[0]==0 ||           // пустой username
+      www_password[0]==0 ||           // или пустой пароль
+      WiFi.softAPIP()!=INADDR_NONE || // или WiFi в режиме AP
+      server.authenticate(www_username, www_password)) // или уже аутентифицированы
+    result = false;
+    
+  return result;
+}
+
 
 /************
 * Handle root
 */
 void handleRoot() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   int started; 
   if (debug) {
@@ -82,7 +93,11 @@ else
 * Handle "Device Information"
 */
 void handleInfo() {
-
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
+    
   int started; 
   if (debug) {
     started = millis();
@@ -112,8 +127,6 @@ void handleInfo() {
     String() +
     "<table class='clsT1'\n><caption>Soft AP</caption>\n");
     
-//  Serial.println("handleInfo CP#3");
-
   sendChunk( StringExt(FPSTR(TR0)).replace("%s1","SSID:").replace("%s2",String(softAP_ssid)) );
   sendChunk( StringExt(FPSTR(TR1)).replace("%s1","IP Address:").replace("%s2",toStringIp(WiFi.softAPIP())) );
   sendChunk(
@@ -200,6 +213,10 @@ void handleInfo() {
 * Set socket state & return an image
 */
 void handleSw() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   int started; 
   if (debug) {
@@ -260,6 +277,10 @@ void restoreManualResetState() {
 * Smart switch
 */
 void handleSwitch() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
   
   int started; 
   if (debug) {
@@ -667,6 +688,10 @@ void handleSwitch() {
 * Handle Saving Switch Options
 *******************************************/
 void handleSwitchSave() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   Serial.begin(115200);
 
@@ -766,6 +791,10 @@ boolean captivePortal() {
 * Wifi config page handler 
 */
 void handleWifi() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   int started; 
   if (debug) {
@@ -840,7 +869,11 @@ void handleWifi() {
   sendChunk( String()+
     "<table class='clsT1'>\n<caption>Web Server Settings</caption>\n");
   sendChunk( String()+
-    "<tr class='clsTR0'><th id='th1' class='clsTH1'>HTTP&nbsp;Port:</th><td class='clsTD1'><input class='clsInputText' type='text' placeholder='port number' name='http_port' value='"+http_port+"'/></td></tr>\n"
+    "<tr class='clsTR0'><th id='th6' class='clsTH1'>HTTP&nbsp;Port:</th><td class='clsTD1'><input class='clsInputText' type='text' placeholder='port number' name='http_port' value='"+http_port+"'/></td></tr>\n");
+  sendChunk( String()+
+    "<tr class='clsTR1'><th id='th7' class='clsTH1'>Username:</th><td class='clsTD1'><input class='clsInputText' type='text' placeholder='' maxlength='15' name='wn' value='"+www_username+"'/></td></tr>\n");
+  sendChunk( String()+
+    "<tr class='clsTR0'><th id='th8' class='clsTH1'>Password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' name='wp' value='"+www_password+"'/></td></tr>\n"
     "</table>\n");
 
   sendChunk( String() +
@@ -868,6 +901,10 @@ void handleWifi() {
 */
 void handleWifiSave() {
   
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
+  
   int started; 
   if (debug) {
     started = millis();
@@ -887,9 +924,11 @@ void handleWifiSave() {
     if (server.arg("d2")=="") { stDns2 = INADDR_NONE; } else { stDns2.fromString(server.arg("d2")); }
     int old_http_port = http_port;
     http_port = (int)server.arg("http_port").toInt();
+    server.arg("wn").toCharArray(www_username, sizeof(www_username) - 1);
+    server.arg("wp").toCharArray(www_password, sizeof(www_password) - 1);
     
     /* STORE OPTIONS TO EEPROM */
-    struct credentials_v2_t C;
+    struct credentials_v3_t C;
     strncpy(C.ssid, ssid, sizeof(ssid)); // dest, src, size
     strncpy(C.password, password, sizeof(password));
     C.dhcp_flag = stDhcpFlag;
@@ -899,8 +938,9 @@ void handleWifiSave() {
     C.dns1 = stDns1;
     C.dns2 = stDns2;
     C.http_port = http_port;
+    strncpy(C.www_username, www_username, sizeof(www_username)); // dest, src, size
+    strncpy(C.www_password, www_password, sizeof(www_password));
     storeCredentialsBlock(C);
-    //loadCredentialsBlock();
     /**********************************/
     if (http_port != old_http_port) {
       // Перезапускаем Web-сервер на новом порту
@@ -981,6 +1021,10 @@ void handleWifiClear() {
 * Time config page handler 
 */
 void handleTime() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   int started; 
   if (debug) {
@@ -1114,6 +1158,10 @@ String getDisabled(boolean value) {
 * Handle NTP & Time parmeters save form and redirect to Time settings page again 
 */
 void handleTimeSave() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   int started; 
   if (debug) {
@@ -1174,6 +1222,10 @@ void handleTimeSave() {
  * Handle "Rebooting in progress" page
  */
 void handleReboot() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
   
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
   server.handleClient();
@@ -1398,6 +1450,10 @@ void sendStyle() {
 * Handle Sensors
 */
 void handleSensors() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   int started; 
   if (debug) {
@@ -1641,6 +1697,11 @@ void handleSensors() {
 * Handle Saving Wheather Sensors Options
 *******************************************/
 void handleSensorsSave() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
+
   Serial.begin(115200);
   
   int started; 
@@ -1876,6 +1937,11 @@ void handleSensorsSSE() {
 * Handle "Thermostat" Page
 */
 void handleThermostat() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
+
   int started; 
   if (debug) {
     started = millis();
@@ -2033,6 +2099,10 @@ void handleThermostat() {
 * Handle Saving Thermostat Options
 *******************************************/
 void handleThermostatSave() {
+  
+  // Basic Аутентификация
+  if (authenticationRequired())
+    return server.requestAuthentication();
 
   Serial.begin(115200);
 

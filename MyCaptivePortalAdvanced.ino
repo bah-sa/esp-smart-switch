@@ -44,9 +44,8 @@ BMP280 bmp;
 
 ADC_MODE(ADC_VCC);
 
-  const char* www_username = "root";
-  const char* www_password = "root";
-
+char www_username[16];
+char www_password[16];
 
 /* Web Server Port */
 int http_port = 80;
