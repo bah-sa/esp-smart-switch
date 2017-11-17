@@ -833,7 +833,10 @@ void handleWifi() {
   sendChunk( String()+
     "</table>\n");
   sendChunk( String()+
-    "<form method='POST' action='wifisave'>\n"
+    "<form method='POST' action='wifisave' "
+    "onsubmit='if (document.getElementById(\"wp1\").value!=document.getElementById(\"wp2\").value) "
+    "{alert(\"Введенные пароли не совпадают!\");return false;} else {ap.style.visibility=\"visible\";return true;}' "
+    " >\n"
     "<input type='hidden' name='h' value='1'/>\n" );
     
   /* WLAN Network credentials */  
@@ -873,11 +876,15 @@ void handleWifi() {
   sendChunk( String()+
     "<tr class='clsTR1'><th id='th7' class='clsTH1'>Username:</th><td class='clsTD1'><input class='clsInputText' type='text' placeholder='' maxlength='15' name='wn' value='"+www_username+"'/></td></tr>\n");
   sendChunk( String()+
-    "<tr class='clsTR0'><th id='th8' class='clsTH1'>Password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' name='wp' value='"+www_password+"'/></td></tr>\n"
+    "<tr class='clsTR0'><th id='th8' class='clsTH1'>Password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' id='wp1' name='wp' value='"+www_password+"'/></td></tr>\n");
+  sendChunk( String()+
+    "<tr class='clsTR0'><th id='th9' class='clsTH1'>Repeat password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' id='wp2' value='"+www_password+"'/></td></tr>\n"
     "</table>\n");
 
   sendChunk( String() +
-    "<input class='clsBtn' type='submit' onclick='ap.style.visibility=\"visible\";' value='Apply' />\n"
+    "<input class='clsBtn' type='submit' "
+    "on_click='alert(\"button click\"); alert(document.getElementById(\"wp1\").value); ap.style.visibility=\"visible\";' "
+    "value='Apply' />\n"
     "</form>\n"
     );
 
