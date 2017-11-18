@@ -67,7 +67,7 @@ else
   
 
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
   
   sendChunk(FPSTR(START_HEAD));
   sendChunk(FPSTR(META_TAGS));
@@ -106,7 +106,7 @@ void handleInfo() {
   }
 
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
   
 //  Serial.println("handleInfo CP#1");
 
@@ -290,7 +290,7 @@ void handleSwitch() {
   }
 
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
 
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
@@ -804,7 +804,7 @@ void handleWifi() {
   }
   
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
 
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
@@ -1041,7 +1041,7 @@ void handleTime() {
   }
 
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
 
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
@@ -1236,7 +1236,7 @@ void handleReboot() {
     return server.requestAuthentication();
   
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
 
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
@@ -1296,7 +1296,7 @@ void handleNotFound() {
       "Cache-Control: max-age=3600, must-revalidate\r\n"
       "\r\n"
     );
-    server.handleClient();
+    //server.handleClient();
     // Send content
     server.sendContent("404 Not found");
     server.client().flush();
@@ -1324,7 +1324,7 @@ void handleNotFound() {
   else {
 
     server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-    server.handleClient();
+    //server.handleClient();
     
     sendChunk( FPSTR(START_HEAD) );
     sendChunk( FPSTR(META_TAGS) );
@@ -1470,7 +1470,7 @@ void handleSensors() {
   }
   
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
  
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
@@ -1771,7 +1771,7 @@ void handleSSE() {
   Header += "Cache-Control: no-cache\r\n";
   Header += "\r\n";  
   server.sendContent(Header);
-  server.handleClient();
+  //server.handleClient();
   //int j = 100;
   //for (int i=1; i<=j; i++) {
 
@@ -1865,7 +1865,7 @@ void handleSensorsSSE() {
   Header += "Cache-Control: no-cache\r\n";
   Header += "\r\n";  
   server.sendContent(Header);
-  server.handleClient();
+  //server.handleClient();
 
   result  = "retry: 7000\n"; // реальный интервал обновления ~ 9-10 сек.
   if (rtcPresent) {
@@ -1957,7 +1957,7 @@ void handleThermostat() {
   }
 
   server.sendContent( FPSTR(RESPONSE_HTTP_200_HEADER_CHUNKED) );
-  server.handleClient();
+  //server.handleClient();
 
   sendChunk( FPSTR(START_HEAD) );
   sendChunk( FPSTR(META_TAGS) );
@@ -2023,8 +2023,7 @@ void handleThermostat() {
     /* Thermostat main options (desired temperature and deviation) */
     sendChunk(
       String() +
-      //"<table id='ts_opt_table' class='clsT1' "+(socket_pin<0 || socket_mode!=2?"style='display:none'":"")+"><caption>Thermostat Options</caption>\n"
-      "<tr class='clsTR0'><th class='clsTH1'>Desired T<sup>o</sup>:</th>\n"
+      "<tr class='clsTR0'><th class='clsTH1'>Desired T&#0176;:</th>\n"
       "<td class='clsTD1'>"
       );
     sendChunk( String() +
@@ -2181,7 +2180,7 @@ void handleThermostatSSE() {
   Header += "Cache-Control: no-cache\r\n";
   Header += "\r\n";  
   server.sendContent(Header);
-  server.handleClient();
+  //server.handleClient();
   
 
   if (socket_mode==SOCKET_MODE_THERMOSTAT) {
