@@ -11,8 +11,9 @@ void sendChunk(String chunk) {
 void flushChunkedResponse() {
   /* Send empty chunk */
   sendChunk( "" );
-  server.client().flush();
-  delay(1); // Даем время, чтобы принять данные
+  //server.client().flush();
+  //delay(1); // Даем время, чтобы принять данные
+  delay(5); // Даем время, чтобы принять данные
   server.client().stop(); // Stop is needed because we sent no content length
 }
 

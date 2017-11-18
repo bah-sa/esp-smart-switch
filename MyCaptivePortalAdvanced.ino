@@ -37,7 +37,7 @@
 #define debug true // вывод отладочных сообщений
 
 #define array_count(array) sizeof(array)/sizeof(array[0])
-#define firmware_version "0.9.5.5"
+#define firmware_version "0.9.5.7"
 
 #define P0 1013.25 
 BMP280 bmp; 
@@ -380,35 +380,30 @@ void loop() {
         }
       }
       ntpUpdateFlag = false;
-      //rechargeAlarm();
+      delay(1);
     }
     
     if (pingFlag) {
-      //Serial.println("===> CP#3 pingFlag detected"); delay(1);
       if (WiFi.status() == WL_CONNECTED) {
         testPING();
         pingFlag = false;
+        delay(1);
        }
     }
 
     if (send2NarodmonFlag) {
-      //Serial.println("===> CP#4 send2NarodmonFlag detected"); delay(1);
       if (WiFi.status() == WL_CONNECTED) {
-        
         send2NarodmonFlag = false; // Сбрасываем флаг до отправки
         narodmonSendIntervalCounter = 0; // Сбрасываем счетчик
         sendToNarodmon();
-        /*
-         if (sendToNarodmon())
-          send2NarodmonFlag = false; // Сбрасываем флаг, только если отправили
-        */  
-       }
+        delay(1);
+      }
     }
 
     if (thermostatFlag) {
-      //Serial.println("===> CP#5 thermostatFlag detected"); delay(1);
       checkThermostatState();
       thermostatFlag = false;
+      delay(1);
     }
   }
 

@@ -95,6 +95,12 @@ float getCurrentTemperature(DeviceAddress devAddr) {
       sensors.setResolution(onewire_precision); // Set resolution globally for all sensors
       sensors.requestTemperaturesByAddress(devAddr);
       result = sensors.getTempC(devAddr);
+      if (result>=85) {
+        /* вторая попытка */
+        delay(400);
+        sensors.requestTemperaturesByAddress(devAddr);
+        result = sensors.getTempC(devAddr);
+      }
     }
   }
   Serial.print("===> getCurrentTemperature result="); Serial.println(result);
