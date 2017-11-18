@@ -41,7 +41,7 @@ void startWebServer(int port) {
   server.on("/thermostatsave", handleThermostatSave);
   server.on("/thermostatsse", handleThermostatSSE);
   server.onNotFound ( handleNotFound );
-  //server.on("/chunktest", handleChunkTest);
+  server.on("/api/sensors", handleApiSensors);
   
   server.begin(); // Web server start
   Serial.print("WebServer started on port "); Serial.println(port);
