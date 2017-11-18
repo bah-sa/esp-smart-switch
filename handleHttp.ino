@@ -879,7 +879,7 @@ void handleWifi() {
   sendChunk( String()+
     "<tr class='clsTR0'><th id='th8' class='clsTH1'>Password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' id='wp1' name='wp' value='"+www_password+"'/></td></tr>\n");
   sendChunk( String()+
-    "<tr class='clsTR0'><th id='th9' class='clsTH1'>Repeat password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' id='wp2' value='"+www_password+"'/></td></tr>\n"
+    "<tr class='clsTR1'><th id='th9' class='clsTH1'>Repeat password:</th><td class='clsTD1'><input class='clsInputText' type='password' placeholder='' maxlength='15' id='wp2' value='"+www_password+"'/></td></tr>\n"
     "</table>\n");
 
   sendChunk( String() +
@@ -1489,13 +1489,7 @@ void handleSensors() {
     /* DS3231 temperature sensor */
     RtcTemperature t1 = Rtc.GetTemperature();
     String sgn = "+"; if (t1.AsFloat() < 0) sgn="";
-/*    
-    char t_formatted[7];
-    double d1 = 9.9;
-    dtostrf(d1, 4, 2, t_formatted);
-    //sprintf(t_formatted, "%s", t_formatted);
-    Serial.println(t_formatted);
-*/    
+
     sendChunk(
       String()+
       "<table class='clsT1'><caption>DS3231 RTC</caption>"
@@ -1644,8 +1638,6 @@ void handleSensors() {
   { /* Read BMP280 Sensor */
     double T,P,A;
     if (BMP280_read(T,P,A)) {
-//      Serial.print("T = \t");Serial.print(T,2); Serial.println(" degC\t"); 
-//      Serial.print("P = \t");Serial.print(P,1); Serial.println(" mmHg\t"); 
       String sgn = "+"; if (T < 0) sgn="";
       sendChunk(
         String()+
@@ -1667,6 +1659,13 @@ void handleSensors() {
     String()+
     "</table>\n");
 
+  /****** REMOTE SENSORS ******/
+  sendChunk(
+    String()+
+    "<table class='clsT1'><caption>Remote sensors</caption>\n" );
+  sendChunk(
+    String()+
+    "</table>\n");
 
   /* NARODMON */
   sendChunk(

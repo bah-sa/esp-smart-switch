@@ -184,7 +184,7 @@ void handleApiSensors() {
           result += "\"id\": \""+getAddressAsString(THERMOSENSOR_BMP280)+"\",\n";
           result += "\"attributes\": {";
             result += "\"name\": \"BMP280 Altitude sensor\",";
-            result += "\"sensorType\": \"A\",";
+            result += "\"sensorType\": \"ELE\",";
             result += "\"value\": \""+String((int)A)+"\",";
             result += "\"formattedValue\": \""+String((int)A)+"&nbsp;m\"";
           result += "}\n"; // attributes end
