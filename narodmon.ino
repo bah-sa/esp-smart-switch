@@ -101,8 +101,11 @@ bool sendToNarodmon() { // Собственно формирование пак�
   buf = buf + "##\r\n"; // закрываем пакет
 
   printCurrentDateTime();
-  Serial.println(" ===> sendToNarodmon ===>");
-  if (debug) Serial.print(buf);
+
+  #if defined(DEBUG_MODE)
+    Serial.println(" ===> sendToNarodmon ===>");
+    Serial.print(buf);
+  #endif
 
   if (!client.connect("narodmon.ru", 8283)) { // попытка подключения
     Serial.println("connection failed");

@@ -3,33 +3,33 @@
  * ВЕРСИЯ 2.
  * **********************************************
  * Максимальный размер EEPROM = 4096 байт.
-  * 
-  * Разделение EEPROM на блоки:
-  * 
-  * Блок          Адрес   Размер   Занято
-  * -----------------------------------------------
-  * CREDENTAILS   0       256 байт      108 байт
-  * NTP           256     256 байт      43 байт
-  * SWITCH        512     256 байт      51 байт
-  * SENSORS       768     256 байт      16 байт
-  * FREE_BLOCK1   1024    256 байт
-  * FREE_BLOCK2   1280    256 байт
-  * FREE_BLOCK3   1536    256 байт
-  * FREE_BLOCK4   1792    256 байт
-  * TIMERS        2048   2048 байт
-  * 
-  * В каждый блок записываем структуру данных.
-  * Первый байт в блоке содержит версию структуры,
-  * Второй (для контроля) - длину этой структуры.
-  * 
-  * Совместимость сохраненных в EEPROM настроек достигается следующими принципами: 
-  * - если возникает необходимость расширить существующую структуру хранящихся данных, 
-  *   то создаем новую версию структуры, оставляя все старые версии для совместимости чтения сохраненных данных.
-  * - необходимо следить, чтобы размер новой версии структуры не превысил максимальный размер блока данных (256 байт).
-  * - запись всегда происходит структурой актуальной версии.
-  * 
-  *  
-*/
+ * 
+ * Разделение EEPROM на блоки:
+ * 
+ * Блок          Адрес   Размер   Занято
+ * -----------------------------------------------
+ * CREDENTAILS   0       256 байт      108 байт
+ * NTP           256     256 байт      43 байт
+ * SWITCH        512     256 байт      51 байт
+ * SENSORS       768     256 байт      16 байт
+ * FREE_BLOCK1   1024    256 байт
+ * FREE_BLOCK2   1280    256 байт
+ * FREE_BLOCK3   1536    256 байт
+ * FREE_BLOCK4   1792    256 байт
+ * TIMERS        2048   2048 байт
+ * 
+ * В каждый блок записываем структуру данных.
+ * Первый байт в блоке содержит версию структуры,
+ * Второй (для контроля) - длину этой структуры.
+ * 
+ * Совместимость сохраненных в EEPROM настроек достигается следующими принципами: 
+ * - если возникает необходимость расширить существующую структуру хранящихся данных, 
+ *   то создаем новую версию структуры, оставляя все старые версии для совместимости чтения сохраненных данных.
+ * - необходимо следить, чтобы размер новой версии структуры не превысил максимальный размер блока данных (256 байт).
+ * - запись всегда происходит структурой актуальной версии.
+ * 
+ *  
+ */
 
 /** CREDENTIALS ****************************************/
 struct credentials_v1_t
@@ -203,8 +203,7 @@ boolean loadCredentialsBlock() {
 struct ntp_v1_t
 {
     const byte ver = 1;         // structure version
-    const byte len = 
-      sizeof(ntp_v1_t);         // structure size
+    const byte len = sizeof(ntp_v1_t);         // structure size
     char    server[32];         // ntp server
     int      time_zone;         // ntp timezone
     int sync_interval;          // ntp sync interval
@@ -278,8 +277,7 @@ boolean loadNtpBlock() {
 struct switch_v1_t
 {
     const byte ver = 1;         // structure version
-    const byte len = 
-      sizeof(switch_v1_t);      // structure size
+    const byte len = sizeof(switch_v1_t);      // structure size
     int      socket_pin;        // socket pin
     int     socket_mode;        // socket mode [SOCKET_MODE_SWITCH, SOCKET_MODE_RESETTER, SOCKET_MODE_THERMOSTAT]
     boolean switcher_photosensor_enabled;
@@ -413,12 +411,12 @@ boolean loadSwitchBlock() {
 /** SENSORS ********************************************/
 struct sensors_v1_t
 {
-    const byte            ver = 1;        // structure version
-    const byte len = sizeof(switch_v1_t); // structure size
-    int               onewire_pin;        // onewire pin
-    int         onewire_precision;        // onewire sensors (ds18b20) precision
-    int                 dht22_pin;        // dht22 pin
-    boolean send2narodmon_enabled;        // send sensors data to narodmon.ru
+    const byte            ver = 1;         // structure version
+    const byte len = sizeof(sensors_v1_t); // structure size
+    int               onewire_pin;         // onewire pin
+    int         onewire_precision;         // onewire sensors (ds18b20) precision
+    int                 dht22_pin;         // dht22 pin
+    boolean send2narodmon_enabled;         // send sensors data to narodmon.ru
 };
 
 union sensors_u {
@@ -489,3 +487,87 @@ boolean loadSensorsBlock() {
   return result;
 }
 
+/** REMOTE_SENSORS ********************************************/
+/*
+struct remote_sensor_v1_t
+{
+    const byte            ver = 1;        // structure version
+    const byte len = sizeof(switch_v1_t); // structure size
+    IPAddress ipaddr;  // ip-адрес удаленного устройства
+    int port;  // порт
+    DeviceAddress id;  // id сенсора
+    char sensorType[3];  // тип сенсора (T,H,P,I,U,W,WH,WM,L,R,RX,TX,CO2,S,LAT,LNG,ELE)
+    int localNumber;  // присваиваемый локальный номер (1-99)
+};
+*/
+/*
+union remote_sensors_u {
+  struct sensors_v1_t V1;
+  //struct sensors_v2_t V2;
+};
+*/
+/*
+ * Запись актуальной версии структуры
+ */
+/* 
+void storeSensorsBlock(struct sensors_v1_t C) {
+  EEPROM.begin(4096);
+  EEPROM.put(EEPROM_SENSORS_BLOCK_ADDRESS, C);
+  EEPROM.commit();
+  EEPROM.end();
+  
+  Serial.print("SENSORS Parameters stored to EEPROM. DataSize="); Serial.println(C.len);
+}
+*/
+/*
+ * Чтение должно поддерживать любую из версий записанных структур
+*/
+/*
+boolean loadSensorsBlock() {
+  boolean result = true;
+  union  sensors_u U = {};  // Объединение структур
+
+  EEPROM.begin(4096);
+  
+  //Serial.println("*** LOAD SENSORS ===>");
+  EEPROM.get(EEPROM_SENSORS_BLOCK_ADDRESS, U.V1); // Считываем в первую версию структуры
+
+  // Присваиваем параметрам дефолтные значения
+    onewire_pin = NOT_INSTALLED;
+    onewire_precision = ONEWIRE_PRECISION_10_BIT;
+    dht22_pin = NOT_INSTALLED;
+    send2narodmon_enabled = false;
+  
+  if (U.V1.ver==1 && U.V1.len==sizeof(switch_v1_t)) {
+    Serial.println("SENSORS\t\tversion#1 in store.");
+    //EEPROM.get(EEPROM_SENSORS_BLOCK_ADDRESS, U.V1); // Данные в первую версию структуры уже считаны!
+    // Разбор параметров структуры
+    onewire_pin = U.V1.onewire_pin;
+    onewire_precision = U.V1.onewire_precision;
+    dht22_pin = U.V1.dht22_pin;
+    send2narodmon_enabled = U.V1.send2narodmon_enabled;
+  }
+
+//  else if (U.V1.ver==2 && U.V1.len==sizeof(switch_v2_t)) {
+//    Serial.println("SENSORS\t\tversion#2 in store.");
+//    EEPROM.get(EEPROM_SENSORS_BLOCK_ADDRESS, U.V2); // Считываем данные во вторую версию структуры
+//    // Разбор параметров структуры
+//  }
+
+  else {
+    Serial.println("Default SENSORS Parameters applied.");
+    result = false;
+  }
+
+//    Serial.print("onewire_pin=");
+//    Serial.println(onewire_pin);
+//    Serial.print("onewire_precision=");
+//    Serial.println(onewire_precision);
+//    Serial.print("dht22_pin=");
+//    Serial.println(dht22_pin);
+//    Serial.print("send2narodmon_enabled=");
+//    Serial.println(send2narodmon_enabled);
+
+  return result;
+}
+*/

@@ -28,12 +28,32 @@ const char FINISH_DOC[] PROGMEM =
   "</body>\n</html>";
 const char PAGE_HEADER[] PROGMEM = 
   "<h1 class='clsH1'>%s1</h1>\n";
+const char TABLE_HEADER[] PROGMEM = 
+  "<table class='clsT1'\n><caption>%s1</caption>\n";
+const char TABLE_FOOTER[] PROGMEM = 
+  "</table>\n";
+const char FORM_HEADER[] PROGMEM = 
+  "<form method='POST' action='%s'>\n";
+const char EVENT_STREAM_HEADER[] PROGMEM = 
+  "HTTP/1.1 200 OK\r\n"
+  "Content-Type: text/event-stream;\r\n"
+  "Cache-Control: no-cache\r\n\r\n";
+  
 /* Четная строка таблицы */  
 const char TR0[] PROGMEM = 
   "<tr class='clsTR0'><th class='clsTH1'>%s1</th><td class='clsTD1'>%s2</td></tr>\n";
 /* Нечетная строка таблицы */  
 const char TR1[] PROGMEM = 
   "<tr class='clsTR1'><th class='clsTH1'>%s1</th><td class='clsTD1'>%s2</td></tr>\n";
+/* Открытие TD в четной строке таблицы */  
+const char TR0_TH_OPEN_TD[] PROGMEM = 
+  "<tr class='clsTR0'><th class='clsTH1'>%s1</th><td class='clsTD1'>";
+/* Открытие TD в нечетной строке таблицы */  
+const char TR1_TH_OPEN_TD[] PROGMEM = 
+  "<tr class='clsTR1'><th class='clsTH1'>%s1</th><td class='clsTD1'>";
+/* Закрытие TD_TR */  
+const char CLOSE_TD_TR[] PROGMEM = 
+  "</td></tr>\n";
   
 /*
  * "Applying changes..." float panel
@@ -314,4 +334,6 @@ const char SWITCH_OFF_S[] PROGMEM = "Switch Off";
 const char RESET_S[] PROGMEM = "Reset";
 const char RESETTING_S[] PROGMEM = "Resetting";
 const char EMPTY_S[] PROGMEM = "";
+
+//const DeviceAddress THERMOSENSOR_NON_SELECTED PROGMEM = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 

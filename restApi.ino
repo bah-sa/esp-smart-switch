@@ -14,11 +14,10 @@ void handleApiSensors() {
   if ( server.method() != HTTP_GET )
     return server.send(405, "text/plain", "Method Not Allowed");
 
-  int started; 
-  if (debug) {
-    started = millis();
+  #if defined(DEBUG_MODE)
+    int started = millis();
     Serial.println("handleApiSensors started");
-  }
+  #endif
 
   String sensorType = server.arg("sensorType")!="" ? server.arg("sensorType") : "ALL";
   String sensorId = server.arg("id")!="" ? server.arg("id") : "ALL";
@@ -184,7 +183,7 @@ void handleApiSensors() {
           result += "\"id\": \""+getAddressAsString(THERMOSENSOR_BMP280)+"\",\n";
           result += "\"attributes\": {";
             result += "\"name\": \"BMP280 Altitude sensor\",";
-            result += "\"sensorType\": \"A\",";
+            result += "\"sensorType\": \"ELE\",";
             result += "\"value\": \""+String((int)A)+"\",";
             result += "\"formattedValue\": \""+String((int)A)+"&nbsp;m\"";
           result += "}\n"; // attributes end
@@ -203,8 +202,8 @@ void handleApiSensors() {
   delay(1);
   server.client().stop();
 
-  if (debug) {
+  #if defined(DEBUG_MODE)
     Serial.print("handleApiSensors complete ["); Serial.print(String(millis()-started)); Serial.println(" msec.]");
-  }
+  #endif
 }
 
