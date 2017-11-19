@@ -34,10 +34,10 @@
  * введите в браузере "http://192.168.10.1"
  * и выполните настройку устройства.
  */
-#define debug true // вывод отладочных сообщений
+//#define DEBUG_MODE
 
 #define array_count(array) sizeof(array)/sizeof(array[0])
-#define firmware_version "0.9.5.9"
+#define firmware_version "0.9.5.11"
 
 #define P0 1013.25 
 BMP280 bmp; 

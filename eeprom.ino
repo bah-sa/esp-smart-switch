@@ -488,6 +488,7 @@ boolean loadSensorsBlock() {
 }
 
 /** REMOTE_SENSORS ********************************************/
+/*
 struct remote_sensor_v1_t
 {
     const byte            ver = 1;        // structure version
@@ -498,12 +499,13 @@ struct remote_sensor_v1_t
     char sensorType[3];  // тип сенсора (T,H,P,I,U,W,WH,WM,L,R,RX,TX,CO2,S,LAT,LNG,ELE)
     int localNumber;  // присваиваемый локальный номер (1-99)
 };
-
+*/
+/*
 union remote_sensors_u {
   struct sensors_v1_t V1;
   //struct sensors_v2_t V2;
 };
-
+*/
 /*
  * Запись актуальной версии структуры
  */
